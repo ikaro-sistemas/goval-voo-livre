@@ -103,14 +103,14 @@ function goval_news_grid_shortcode($atts) {
 }
 
 // ============================================================================
-// 2. SHORTCODE: ABAS E TABELAS DE CAMPEÕES
+// 2. SHORTCODE: ABAS E TABELAS DE CAMPEÕES (Multi-Ranking Edition)
 // Uso no Elementor: [goval_champions_tabs]
 // ============================================================================
 add_shortcode('goval_champions_tabs', 'goval_champions_tabs_shortcode');
 function goval_champions_tabs_shortcode($atts) {
     ob_start();
 
-    // Query robusta para resgatar todos os campeões do CPT
+    // Query robusta para resgatar todos os campeões cadastrados!
     $campeoes_query = new WP_Query(['post_type' => 'campeao', 'posts_per_page' => -1]);
     $campeoes = [];
     if ($campeoes_query->have_posts()) {
@@ -119,115 +119,232 @@ function goval_champions_tabs_shortcode($atts) {
             $campeoes[] = [
                 'title' => get_the_title(),
                 'bio' => get_the_excerpt(),
-                'nacionalidade' => get_post_meta(get_the_ID(), 'nacionalidade', true),
-                'equipamento' => get_post_meta(get_the_ID(), 'equipamento', true),
-                'ano' => get_post_meta(get_the_ID(), 'ano_campeonato', true),
-                'pos' => get_post_meta(get_the_ID(), 'posicao', true) ?: 1,
-                'type' => get_post_meta(get_the_ID(), 'tipo_torneio', true)
+                'nacionalidade' => get_post_meta(get_the_ID(), 'nacionalidade', true) ?: 'Desconhecido',
+                'equipamento' => get_post_meta(get_the_ID(), 'equipamento', true) ?: 'N/A',
+                'ano' => get_post_meta(get_the_ID(), 'ano_campeonato', true) ?: date('Y'),
+                'pos' => (int) (get_post_meta(get_the_ID(), 'posicao', true) ?: 1),
+                'type' => get_post_meta(get_the_ID(), 'tipo_torneio', true) ?: 'Mundial'
             ];
         }
     }
     wp_reset_postdata();
 
-    // Separação de Lógica de Negócio (Organiza em arrays por Ano e Top Rankings)
-    $atual = null;
-    $maiores = [];
+    // --- LÓGICAS DE AGREGAÇÃO HISTÓRICA ---
+    $atual_mundial = null;
+    $atual_gv = null;
     $por_ano = [];
+    $tit_mundiais = [];
+    $tit_gv = [];
+    $tit_br = [];
 
     foreach ($campeoes as $c) {
-        if ($c['ano'] == '2026' && $c['pos'] == 1) $atual = $c;
-        if ($c['type'] == 'Historico Top' || $c['pos'] == 1) {
-            if (!in_array($c, $maiores)) $maiores[] = $c;
+        $ano = $c['ano']; $nome = $c['title']; $pos = $c['pos']; $tipo = $c['type'];
+        
+        // Separa Destaques Atuais 2026 (Para a aba principal)
+        if ($ano == '2026' && $pos == 1) {
+            if ($tipo == 'Mundial' && !$atual_mundial) $atual_mundial = $c;
+            if ($tipo == 'GV' && !$atual_gv) $atual_gv = $c;
         }
-        $por_ano[$c['ano']][] = $c;
+
+        // Soma os Troféus/Títulos (Somente os que ganharam Ouro / 1º Lugar)
+        if ($pos == 1) {
+            if ($tipo == 'Mundial') {
+                if (!isset($tit_mundiais[$nome])) $tit_mundiais[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0];
+                $tit_mundiais[$nome]['qtd']++;
+            } elseif ($tipo == 'GV') {
+                if (!isset($tit_gv[$nome])) $tit_gv[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0];
+                $tit_gv[$nome]['qtd']++;
+            } elseif ($tipo == 'Brasileiro') {
+                if (!isset($tit_br[$nome])) $tit_br[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0];
+                $tit_br[$nome]['qtd']++;
+            }
+        }
+
+        // Agrupamento histórico universal (Ano > Tipo da Competição)
+        $por_ano[$ano][$tipo][] = $c;
     }
-    krsort($por_ano); // Z-A (Anos mais recentes primeiro)
+    
+    // Ordena do maior pro menor os Campeões Históricos
+    uasort($tit_mundiais, function($a,$b) { return $b['qtd'] <=> $a['qtd']; });
+    uasort($tit_gv, function($a,$b) { return $b['qtd'] <=> $a['qtd']; });
+    uasort($tit_br, function($a,$b) { return $b['qtd'] <=> $a['qtd']; });
+    krsort($por_ano); // Ordena os anos do mais novo para o mais velho
     ?>
     <style>
-        /* Estilos Isolados para não conflitar com Elementor */
-        .goval-tabs-nav { display: flex; gap: 10px; border-bottom: 2px solid #007A53; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; font-family: 'Inter', sans-serif;}
+        /* Estilos Limpos da Ferramenta de Campeões */
+        .goval-champions-wrapper { max-width: 1300px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif;}
+        .goval-tabs-nav { display: flex; gap: 10px; border-bottom: 2px solid #007A53; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; }
         .goval-tab-btn { padding: 12px 24px; border:none; background: #eee; color: #333; cursor: pointer; font-weight: bold; border-radius: 4px; white-space: nowrap; transition: 0.2s;}
         .goval-tab-btn.active { background: #007A53; color: white; }
         .goval-tab-btn:hover:not(.active) { background: #ddd; }
-        .goval-tab-content { display: none; animation: fadeIn 0.5s; font-family: 'Inter', sans-serif;}
+        .goval-tab-content { display: none; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .goval-ranking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 20px; }
+        .goval-board { background: white; border-radius: 8px; border: 1px solid #ddd; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .goval-board h3 { margin: 0 0 15px 0; color: #007A53; border-bottom: 2px solid #007A53; padding-bottom: 10px; }
+        .goval-card { border-left: 5px solid #FFB81C; background: #fafafa; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+        .gold-border { border-left-color: #FFD700 !important; }
+        .silver-border { border-left-color: #C0C0C0 !important; }
+        .bronze-border { border-left-color: #CD7F32 !important; }
     </style>
 
-    <div class="goval-champions-wrapper" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-        
-        <!-- Navegação das Abas -->
+    <div class="goval-champions-wrapper">
+        <!-- NAVEGAÇÃO -->
         <div class="goval-tabs-nav">
-            <button onclick="openGovalTab(event, 'tab-atual')" class="goval-tab-btn active">👑 Campeão Atual</button>
-            <button onclick="openGovalTab(event, 'tab-maiores')" class="goval-tab-btn">🌍 Maiores Campeões</button>
+            <button onclick="openGovalTab(event, 'tab-atual')" class="goval-tab-btn active">👑 Campeões da Temporada</button>
+            <button onclick="openGovalTab(event, 'tab-maiores')" class="goval-tab-btn">🏆 Resumo de Títulos Históricos</button>
             <?php foreach (array_keys($por_ano) as $anoKey): ?>
-                <button onclick="openGovalTab(event, 'tab-ano-<?php echo esc_attr($anoKey); ?>')" class="goval-tab-btn">Ano <?php echo esc_html($anoKey); ?></button>
+                <button onclick="openGovalTab(event, 'tab-ano-<?php echo esc_attr($anoKey); ?>')" class="goval-tab-btn">🏁 Ano <?php echo esc_html($anoKey); ?></button>
             <?php endforeach; ?>
         </div>
 
-        <!-- CONTEÚDO: Campeão Atual -->
+        <!-- ABA 1: CAMPEÕES ATUAIS (Destaque Biográfico) -->
         <div id="tab-atual" class="goval-tab-content" style="display: block;">
-            <?php if ($atual): ?>
-            <div style="background: white; border-top: 5px solid #007A53; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 30px; align-items: center; flex-wrap: wrap;">
-                <div style="background: url('https://images.unsplash.com/photo-1518331165337-25e227568541?w=400&q=80') center/cover; min-width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.2);"></div>
-                <div>
-                    <span style="background: #FFB81C; padding: 5px 10px; font-size: 0.8em; text-transform: uppercase; font-weight: bold; border-radius: 4px;">Top 1 - <?php echo esc_html($atual['ano']); ?></span>
-                    <h1 style="margin: 10px 0; color: #222; font-size: 3em;"><?php echo esc_html($atual['title']); ?></h1>
-                    <p style="font-size: 1.2em; color: #555;"><strong>Nação:</strong> <?php echo esc_html($atual['nacionalidade']); ?> | <strong>Glider:</strong> <?php echo esc_html($atual['equipamento']); ?></p>
-                    <div style="font-size: 1.1em; line-height: 1.6; color: #444; margin-top: 15px;"><?php echo wp_kses_post($atual['bio']); ?></div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px;">
+                <!-- Mundial 2026 -->
+                <?php if ($atual_mundial): ?>
+                <div style="background: white; border-top: 5px solid #007A53; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                    <span style="background: #e90000; color: white; padding: 5px 10px; font-weight: bold; border-radius: 4px;">CAMPEÃO MUNDIAL</span>
+                    <h1 style="margin: 15px 0; color: #222; font-size: 2.5em;"><?php echo esc_html($atual_mundial['title']); ?></h1>
+                    <p style="font-size: 1.1em; color: #555;"><strong>Nação:</strong> <?php echo esc_html($atual_mundial['nacionalidade']); ?> <br/><strong>Vela (Glider):</strong> <?php echo esc_html($atual_mundial['equipamento']); ?></p>
+                    <p style="color: #444; font-style: italic; line-height: 1.5;"><?php echo wp_kses_post($atual_mundial['bio']); ?></p>
                 </div>
+                <?php endif; ?>
+                <!-- Circuito GV 2026 -->
+                <?php if ($atual_gv): ?>
+                <div style="background: white; border-top: 5px solid #FFB81C; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                    <span style="background: #333; color: white; padding: 5px 10px; font-weight: bold; border-radius: 4px;">REI DA IBITURUNA (CIRCUITO GV)</span>
+                    <h1 style="margin: 15px 0; color: #222; font-size: 2.5em;"><?php echo esc_html($atual_gv['title']); ?></h1>
+                    <p style="font-size: 1.1em; color: #555;"><strong>Nação:</strong> <?php echo esc_html($atual_gv['nacionalidade']); ?> <br/><strong>Vela (Glider):</strong> <?php echo esc_html($atual_gv['equipamento']); ?></p>
+                    <p style="color: #444; font-style: italic; line-height: 1.5;"><?php echo wp_kses_post($atual_gv['bio']); ?></p>
+                </div>
+                <?php endif; ?>
             </div>
-            <?php endif; ?>
         </div>
 
-        <!-- CONTEÚDO: Maiores Campeões (Tabela) -->
+        <!-- ABA 2: MAIORES CAMPEÕES (Rankings Agregados por Números de Títulos) -->
         <div id="tab-maiores" class="goval-tab-content">
-            <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                    <thead>
-                        <tr style="background: #222; color: white; text-align: left;">
-                            <th style="padding: 15px;">Nome do Atleta</th>
-                            <th style="padding: 15px;">Ano de Glória</th>
-                            <th style="padding: 15px;">Nação</th>
-                            <th style="padding: 15px;">Resumo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($maiores as $m): ?>
+            <div class="goval-ranking-grid">
+                <!-- Quadro Mundiais -->
+                <div class="goval-board">
+                    <h3>🌍 Ranking de Mundiais</h3>
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px;">Ouros</th></tr>
+                        <?php foreach($tit_mundiais as $nome => $d): ?>
                         <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 15px; font-weight: bold; color: #007A53;"><?php echo esc_html($m['title']); ?></td>
-                            <td style="padding: 15px;"><strong><?php echo esc_html($m['ano']); ?></strong></td>
-                            <td style="padding: 15px;"><?php echo esc_html($m['nacionalidade']); ?></td>
-                            <td style="padding: 15px; font-size: 0.9em; color: #666;"><?php echo esc_html($m['bio']); ?></td>
+                            <td style="padding:10px;"><strong><?php echo esc_html($nome); ?></strong><br><small><?php echo esc_html($d['nacao']); ?></small></td>
+                            <td style="padding:10px; color:#007A53; font-weight:bold; font-size:1.2em;"><?php echo $d['qtd']; ?>x</td>
                         </tr>
                         <?php endforeach; ?>
-                    </tbody>
-                </table>
+                    </table>
+                </div>
+                <!-- Quadro GV -->
+                <div class="goval-board">
+                    <h3>⛰️ Titulares de Governador Valadares</h3>
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px;">Ouros</th></tr>
+                        <?php foreach($tit_gv as $nome => $d): ?>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding:10px;"><strong><?php echo esc_html($nome); ?></strong><br><small><?php echo esc_html($d['nacao']); ?></small></td>
+                            <td style="padding:10px; color:#FFB81C; font-weight:bold; font-size:1.2em;"><?php echo $d['qtd']; ?>x</td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </table>
+                </div>
+                <!-- Quadro Brasíleiros -->
+                <div class="goval-board">
+                    <h3>🇧🇷 Ranking Brasileiro Absoluto</h3>
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px;">Ouros</th></tr>
+                        <?php foreach($tit_br as $nome => $d): ?>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding:10px;"><strong><?php echo esc_html($nome); ?></strong><br><small><?php echo esc_html($d['nacao']); ?></small></td>
+                            <td style="padding:10px; color:#333; font-weight:bold; font-size:1.2em;"><?php echo $d['qtd']; ?>x</td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- CONTEÚDO: Categorias por Ano -->
-        <?php foreach ($por_ano as $anoKey => $pilotosAno): ?>
+        <!-- ABAS: DETALHES POR ANO -->
+        <?php foreach ($por_ano as $anoKey => $tiposNoAno): ?>
         <div id="tab-ano-<?php echo esc_attr($anoKey); ?>" class="goval-tab-content">
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px;">
-                <?php 
-                usort($pilotosAno, function($a, $b) { return $a['pos'] <=> $b['pos']; });
-                foreach ($pilotosAno as $p): 
+            <h2 style="color: #007A53; font-size: 2em; margin-bottom: 0;">Temporada <?php echo esc_html($anoKey); ?></h2>
+            <p style="color: #666; margin-top: 0;">Resultados oficiais unificados nas categorias Mundiais, Brasileiras e Locais.</p>
+
+            <div class="goval-ranking-grid">
+                
+                <!-- Coluna 1: Mundiais (Até Top 5) -->
+                <?php if (isset($tiposNoAno['Mundial'])): 
+                    usort($tiposNoAno['Mundial'], function($a,$b){ return $a['pos'] <=> $b['pos']; });
                 ?>
-                <div style="background: white; border: 1px solid #ddd; border-top: 4px solid <?php echo ($p['pos']==1)?'#FFB81C':'#999'; ?>; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                    <h3 style="margin: 0; color: #555;"><?php echo esc_html($p['pos']); ?>º Lugar</h3>
-                    <h4 style="margin: 5px 0 15px 0; font-size: 1.6em; color: #007A53;"><?php echo esc_html($p['title']); ?></h4>
-                    <p style="margin: 3px 0;"><strong>Nação:</strong> <?php echo esc_html($p['nacionalidade']); ?></p>
-                    <p style="margin: 3px 0;"><strong>Parapente:</strong> <?php echo esc_html($p['equipamento']); ?></p>
-                    <p style="font-size: 0.95em; color: #666; margin-top: 15px; font-style: italic;"><?php echo esc_html($p['bio']); ?></p>
+                <div class="goval-board">
+                    <h3>🌍 Etapa Mundial (Top 5)</h3>
+                    <?php foreach (array_slice($tiposNoAno['Mundial'], 0, 5) as $p): 
+                        $border = 'goval-card';
+                        if($p['pos']==1) $border = 'goval-card gold-border';
+                        if($p['pos']==2) $border = 'goval-card silver-border';
+                        if($p['pos']==3) $border = 'goval-card bronze-border';
+                    ?>
+                    <div class="<?php echo $border; ?>">
+                        <span style="font-weight:bold; color:#007A53; display:inline-block; margin-bottom:5px;">#<?php echo $p['pos']; ?> LUGAR</span>
+                        <h4 style="margin: 0 0 5px 0; font-size: 1.3em;"><?php echo esc_html($p['title']); ?></h4>
+                        <div style="font-size: 0.9em; color: #555;">
+                            <strong><?php echo esc_html($p['nacionalidade']); ?></strong><br>
+                            Vela: <em><?php echo esc_html($p['equipamento']); ?></em>
+                        </div>
+                        <p style="font-size: 0.9em; margin-top: 8px; color: #444; border-top: 1px dotted #ccc; padding-top: 5px;">
+                            <?php echo wp_trim_words($p['bio'], 15); ?>
+                        </p>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
+                <?php endif; ?>
+
+                <!-- Coluna 2: Circuito GV (Até Top 5) -->
+                <?php if (isset($tiposNoAno['GV'])): 
+                    usort($tiposNoAno['GV'], function($a,$b){ return $a['pos'] <=> $b['pos']; });
+                ?>
+                <div class="goval-board">
+                    <h3>⛰️ Circuito Ibituruna (Top 5)</h3>
+                    <?php foreach (array_slice($tiposNoAno['GV'], 0, 5) as $p): ?>
+                    <div class="goval-card">
+                        <span style="font-weight:bold; color:#555; display:inline-block; margin-bottom:5px;">#<?php echo $p['pos']; ?> LUGAR</span>
+                        <h4 style="margin: 0 0 5px 0; font-size: 1.3em;"><?php echo esc_html($p['title']); ?></h4>
+                        <div style="font-size: 0.9em; color: #555;">
+                            <strong><?php echo esc_html($p['nacionalidade']); ?></strong><br>
+                            Vela: <em><?php echo esc_html($p['equipamento']); ?></em>
+                        </div>
+                        <p style="font-size: 0.9em; margin-top: 8px; color: #444; border-top: 1px dotted #ccc; padding-top: 5px;"><?php echo wp_trim_words($p['bio'], 15); ?></p>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <!-- Coluna 3: Campeões Brasileiros -->
+                <?php if (isset($tiposNoAno['Brasileiro'])): 
+                    usort($tiposNoAno['Brasileiro'], function($a,$b){ return $a['pos'] <=> $b['pos']; });
+                ?>
+                <div class="goval-board">
+                    <h3>🇧🇷 Campeonato Brasileiro</h3>
+                    <?php foreach (array_slice($tiposNoAno['Brasileiro'], 0, 5) as $p): ?>
+                    <div class="goval-card">
+                        <span style="font-weight:bold; color:#222; display:inline-block; margin-bottom:5px;">#<?php echo $p['pos']; ?> NACIONAL</span>
+                        <h4 style="margin: 0 0 5px 0; font-size: 1.3em;"><?php echo esc_html($p['title']); ?></h4>
+                        <div style="font-size: 0.9em; color: #555;"><strong><?php echo esc_html($p['nacionalidade']); ?></strong><br>Vela: <em><?php echo esc_html($p['equipamento']); ?></em></div>
+                        <p style="font-size: 0.9em; margin-top: 8px; color: #444; border-top: 1px dotted #ccc; padding-top: 5px;"><?php echo wp_trim_words($p['bio'], 15); ?></p>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
         <?php endforeach; ?>
-
     </div>
 
-    <!-- Script Isolado para as Abas -->
+    <!-- Script Isolado para as Abas do Elementor -->
     <script>
     function openGovalTab(evt, tabId) {
         let i, tabcontent, tablinks;
