@@ -1,7 +1,8 @@
 <?php
 // ============================================================================
-// SHORTCODE: MAPA 3D AVANÇADO - Dual Pilot/Year Selector + Telemetria (2020-2026)
-// Uso no Elementor: [goval_3d_map]
+// SHORTCODE: MAPA 3D AVANÇADO (MaplibreGL Nativo - Sem deck.gl)
+// Uso: [goval_3d_map]
+// Motor: MaplibreGL v3 + GeoJSON Layers + Satellite Tiles + AWS Terrain 3D
 // ============================================================================
 add_shortcode('goval_3d_map', 'goval_3d_map_shortcode');
 function goval_3d_map_shortcode($atts) {
@@ -11,215 +12,351 @@ function goval_3d_map_shortcode($atts) {
     $anos    = array_keys($db_voos);
     rsort($anos);
     ob_start(); ?>
+
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
     <style>
-        .mapa-3d-wrapper{display:flex;height:88vh;min-height:640px;font-family:'Inter',sans-serif;border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.25)}
-        .mapa-sidebar{width:370px;min-width:300px;background:#0f1c14;color:#eee;padding:18px;border-right:2px solid #1a3325;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
-        .mapa-sidebar h2{color:#55c98a;margin:0;font-size:.95em;text-transform:uppercase;letter-spacing:.5px}
-        .mapa-container-gl{flex-grow:1;position:relative;background:#000}
-        .pilot-block{background:rgba(255,255,255,.05);border-radius:8px;padding:12px;border-left:4px solid #00cc66}
-        .pilot-block.p2{border-left-color:#FFB81C}
-        .pilot-block label{font-size:.72em;color:#aaa;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px}
-        .pilot-block select{width:100%;padding:8px;border-radius:6px;border:1px solid #2a4030;background:#162a1e;color:white;font-size:.88em;margin-top:2px}
-        .sim-btn{padding:12px;background:linear-gradient(135deg,#007A53,#00cc66);color:white;border:none;font-weight:bold;cursor:pointer;border-radius:8px;font-size:.92em;width:100%;transition:opacity .2s}
-        .sim-btn:hover{opacity:.85}
-        #sim-detalhes{background:rgba(255,255,255,.04);border-radius:8px;padding:12px;min-height:80px;font-size:.78em;line-height:1.7;color:#ccc;border:1px solid #1a3325}
-        #sim-detalhes .tl{color:#55c98a;font-weight:bold}
-        .p-stats{font-size:.76em;background:rgba(255,255,255,.04);border-radius:8px;padding:10px;display:none}
-        .p-stats h4{margin:0 0 5px;color:#55c98a}
-        .p-stats.p2 h4{color:#FFB81C}
-        .sr{display:flex;justify-content:space-between;border-bottom:1px solid #1a3325;padding:3px 0}
-        .sr span:last-child{color:#fff;font-weight:500;text-align:right;max-width:58%}
-        .cam-controls{display:flex;flex-wrap:wrap;gap:5px}
-        .cam-btn{flex:1;min-width:75px;padding:7px 4px;background:#1a3325;color:#ccc;border:1px solid #2a4a30;border-radius:6px;cursor:pointer;font-size:.72em;text-align:center;transition:background .2s}
-        .cam-btn:hover{background:#007A53;color:white}
-        .clabel{font-size:.7em;color:#66aa88;text-transform:uppercase;letter-spacing:1px;margin:2px 0 1px}
-        @media(max-width:850px){.mapa-3d-wrapper{flex-direction:column;height:auto}.mapa-sidebar{width:100%;max-height:48vh}.mapa-container-gl{height:52vh}}
+    .gv3d-wrap   { display:flex; height:88vh; min-height:640px; font-family:'Inter',sans-serif; border-radius:12px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    .gv3d-side   { width:350px; min-width:290px; background:#0d1a12; color:#ddd; padding:16px; border-right:2px solid #1a3020; overflow-y:auto; display:flex; flex-direction:column; gap:9px; }
+    .gv3d-map    { flex-grow:1; position:relative; }
+    .gv3d-side h2{ color:#4ecb80; margin:0; font-size:.9em; text-transform:uppercase; letter-spacing:.5px; }
+    .pb          { background:rgba(255,255,255,.05); border-radius:8px; padding:11px; border-left:4px solid #00cc60; }
+    .pb.p2       { border-left-color:#FFB81C; }
+    .pb label    { font-size:.7em; color:#999; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:3px; }
+    .pb select   { width:100%; padding:7px; border-radius:6px; border:1px solid #233022; background:#142014; color:#fff; font-size:.85em; margin-top:2px; }
+    .sbtn        { padding:12px; background:linear-gradient(135deg,#007A53,#00cc60); color:#fff; border:none; font-weight:700; cursor:pointer; border-radius:8px; font-size:.9em; width:100%; transition:opacity .2s; }
+    .sbtn:hover  { opacity:.85; }
+    #tele-box    { background:rgba(255,255,255,.04); border-radius:8px; padding:11px; min-height:75px; font-size:.78em; line-height:1.7; color:#bbb; border:1px solid #1a3020; }
+    .tl          { color:#4ecb80; font-weight:700; }
+    .p-stats     { font-size:.74em; background:rgba(255,255,255,.04); border-radius:8px; padding:9px; display:none; }
+    .p-stats h4  { margin:0 0 5px; color:#4ecb80; }
+    .p-stats.p2 h4 { color:#FFB81C; }
+    .sr          { display:flex; justify-content:space-between; border-bottom:1px solid #1a3020; padding:3px 0; }
+    .sr span:last-child { color:#fff; font-weight:500; text-align:right; max-width:60%; }
+    .cam-wrap    { display:flex; flex-wrap:wrap; gap:5px; }
+    .cbtn        { flex:1; min-width:72px; padding:6px 3px; background:#142014; color:#aaa; border:1px solid #243824; border-radius:6px; cursor:pointer; font-size:.7em; text-align:center; transition:background .2s; }
+    .cbtn:hover  { background:#007A53; color:#fff; }
+    .clbl        { font-size:.68em; color:#5a9a70; text-transform:uppercase; letter-spacing:1px; margin:2px 0 1px; }
+    /* popup MaplibreGL */
+    .maplibregl-popup-content { background:#0d1a12; color:#ddd; font-size:.8em; padding:12px 14px; border-radius:8px; border:1px solid #00cc60; max-width:240px; }
+    .maplibregl-popup-tip { border-top-color:#0d1a12!important; border-bottom-color:#0d1a12!important; }
+    @media(max-width:820px){.gv3d-wrap{flex-direction:column;height:auto}.gv3d-side{width:100%;max-height:46vh}.gv3d-map{height:54vh}}
     </style>
 
-    <div class="mapa-3d-wrapper">
-        <!-- ══════════ SIDEBAR ══════════ -->
-        <div class="mapa-sidebar">
+    <div class="gv3d-wrap">
+        <!-- ════ SIDEBAR ════ -->
+        <div class="gv3d-side">
             <h2>🏔 Telemetria 3D · Ibituruna</h2>
 
-            <div class="pilot-block p1">
+            <div class="pb p1">
                 <label>🟢 Piloto 1 + Ano</label>
                 <select id="sel-ano1" onchange="atualizarPilotos('1')">
-                    <?php foreach($anos as $a): ?><option value="<?= esc_attr($a) ?>"><?= esc_html($a) ?></option><?php endforeach; ?>
+                    <?php foreach($anos as $a): ?><option value="<?= esc_attr($a)?>"><?= esc_html($a)?></option><?php endforeach; ?>
                 </select>
                 <select id="sel-piloto1" style="margin-top:6px"></select>
             </div>
 
-            <div class="pilot-block p2">
+            <div class="pb p2">
                 <label>🟡 Piloto 2 + Ano</label>
                 <select id="sel-ano2" onchange="atualizarPilotos('2')">
-                    <?php foreach($anos as $a): ?><option value="<?= esc_attr($a) ?>" <?php if($a==$anos[1]) echo 'selected'; ?>><?= esc_html($a) ?></option><?php endforeach; ?>
+                    <?php foreach($anos as $a): ?><option value="<?= esc_attr($a)?>" <?php if($a==$anos[1]) echo 'selected'; ?>><?= esc_html($a)?></option><?php endforeach; ?>
                 </select>
                 <select id="sel-piloto2" style="margin-top:6px"></select>
             </div>
 
-            <button class="sim-btn" onclick="renderizarVoos()">▶ RENDERIZAR COMPARATIVO</button>
+            <button class="sbtn" onclick="renderizarVoos()">▶ RENDERIZAR COMPARATIVO</button>
 
             <div id="stats-p1" class="p-stats">
                 <h4>🟢 <span id="sp1-nome"></span></h4>
                 <?php foreach(['pos'=>'Posição','dist'=>'Distância','alt'=>'Alt. Máxima','dur'=>'Duração','vel'=>'Vel. Média','glider'=>'Vela','selete'=>'Selete','reserva'=>'Reserva','inst'=>'Instrumento'] as $k=>$lbl): ?>
-                <div class="sr"><span><?= $lbl ?></span><span id="sp1-<?= $k ?>"></span></div>
+                <div class="sr"><span><?=$lbl?></span><span id="sp1-<?=$k?>"></span></div>
                 <?php endforeach; ?>
             </div>
             <div id="stats-p2" class="p-stats p2">
                 <h4>🟡 <span id="sp2-nome"></span></h4>
                 <?php foreach(['pos'=>'Posição','dist'=>'Distância','alt'=>'Alt. Máxima','dur'=>'Duração','vel'=>'Vel. Média','glider'=>'Vela','selete'=>'Selete','reserva'=>'Reserva','inst'=>'Instrumento'] as $k=>$lbl): ?>
-                <div class="sr"><span><?= $lbl ?></span><span id="sp2-<?= $k ?>"></span></div>
+                <div class="sr"><span><?=$lbl?></span><span id="sp2-<?=$k?>"></span></div>
                 <?php endforeach; ?>
             </div>
 
-            <div class="clabel">📍 Telemetria do Ponto</div>
-            <div id="sim-detalhes">Passe o mouse sobre um ponto do voo para ver dados em tempo real.</div>
+            <div class="clbl">📍 Telemetria do Ponto</div>
+            <div id="tele-box">Clique em qualquer marcador do percurso para ver detalhes de telemetria.</div>
 
-            <div class="clabel">🎮 Controles de Câmera 3D</div>
-            <div class="cam-controls">
-                <button class="cam-btn" onclick="setCam(65,45,12.5)">🛰 Aérea</button>
-                <button class="cam-btn" onclick="setCam(80,-20,11.5)">🏔 Lateral 3D</button>
-                <button class="cam-btn" onclick="setCam(85,0,11.0)">📍 Frontal</button>
-                <button class="cam-btn" onclick="setCam(0,0,12.0)">🗺 Top 2D</button>
-                <button class="cam-btn" onclick="setCam(89,90,10.0)">🌿 Nível Chão</button>
-                <button class="cam-btn" onclick="modoCinematico()">🎬 Cinemático</button>
+            <div class="clbl">🎮 Câmera 3D</div>
+            <div class="cam-wrap">
+                <button class="cbtn" onclick="setCam(65,45,12.5)">🛰 Aérea</button>
+                <button class="cbtn" onclick="setCam(80,-20,11.5)">🏔 Lateral</button>
+                <button class="cbtn" onclick="setCam(85,0,11.0)">📍 Frontal</button>
+                <button class="cbtn" onclick="setCam(0,0,12.0)">🗺 Top 2D</button>
+                <button class="cbtn" onclick="setCam(89,90,10.5)">🌿 Chão</button>
+                <button class="cbtn" onclick="modoCinematico()">🎬 Cinemático</button>
             </div>
         </div>
 
-        <!-- ══════════ MAP CANVAS ══════════ -->
-        <div id="mapContainerGL" class="mapa-container-gl"></div>
+        <!-- ════ MAPA ════ -->
+        <div id="gv3d-mapbox" class="gv3d-map"></div>
     </div>
 
-    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
-    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/deck.gl@8.9.0/dist.min.js"></script>
-
     <script>
-    const DB=<?php echo $json_db; ?>;
-    let gmapObj=null,deckOverlay=null,cinematicoInterval=null;
+    /* ── Base de Dados ── */
+    const DB = <?php echo $json_db; ?>;
+    let map = null, cinematicoIv = null;
+    let markers = []; // marcadores de ponto de telemetria
 
-    /* ── Preenche select de pilotos conforme o ano escolhido ── */
-    function atualizarPilotos(num){
-        const ano=document.getElementById('sel-ano'+num).value;
-        const sel=document.getElementById('sel-piloto'+num);
-        sel.innerHTML='';
+    /* ── Popula selects de pilotos ── */
+    function atualizarPilotos(num) {
+        const ano = document.getElementById('sel-ano'+num).value;
+        const sel = document.getElementById('sel-piloto'+num);
+        sel.innerHTML = '';
         (DB[ano]||[]).forEach((p,i)=>{
-            const o=document.createElement('option');
-            o.value=i;
-            o.textContent=p.piloto+' — '+p.posicao+' · '+p.pais;
+            const o = document.createElement('option');
+            o.value = i;
+            o.textContent = p.piloto+' — '+p.posicao+' · '+p.pais;
             sel.appendChild(o);
         });
-        if(num==='2'&&sel.options.length>1) sel.selectedIndex=1;
+        if(num==='2' && sel.options.length>1) sel.selectedIndex=1;
     }
 
-    document.addEventListener('DOMContentLoaded',()=>{
+    document.addEventListener('DOMContentLoaded', ()=>{
         atualizarPilotos('1');
-        const a2=document.getElementById('sel-ano2');
+        const a2 = document.getElementById('sel-ano2');
         if(a2.options.length>1) a2.selectedIndex=1;
         atualizarPilotos('2');
+        initMap();
     });
 
-    /* ── Inicia o mapa centrado no Pico da Ibituruna exato ── */
-    setTimeout(()=>{
-        gmapObj=new maplibregl.Map({
-            container:'mapContainerGL',
-            style:{
-                version:8,
-                sources:{
-                    'gsat':{type:'raster',tiles:['https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'],tileSize:256},
-                    'aterr':{type:'raster-dem',tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],encoding:'terrarium',tileSize:256}
+    /* ═══════════════════════════════════════════════
+       INICIALIZAÇÃO DO MAPA — MaplibreGL Nativo
+    ═══════════════════════════════════════════════ */
+    function initMap() {
+        map = new maplibregl.Map({
+            container: 'gv3d-mapbox',
+            style: {
+                version: 8,
+                glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+                sources: {
+                    // Satélite Google (sem token)
+                    'sat': {
+                        type: 'raster',
+                        tiles: ['https://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}'],
+                        tileSize: 256,
+                        attribution: '© Google Maps'
+                    },
+                    // Terreno 3D AWS (sem token)
+                    'terrain': {
+                        type: 'raster-dem',
+                        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+                        encoding: 'terrarium',
+                        tileSize: 256
+                    }
                 },
-                layers:[{id:'sat',type:'raster',source:'gsat'}]
+                layers: [{
+                    id: 'background',
+                    type: 'background',
+                    paint: { 'background-color': '#1a2a1a' }
+                }, {
+                    id: 'satellite',
+                    type: 'raster',
+                    source: 'sat'
+                }]
             },
-            // Coordenadas GPS reais do Pico da Ibituruna, GV - MG, Brasil
-            center:[-41.9437,-18.8819],
-            zoom:12.5,pitch:65,bearing:45,maxPitch:89
-        });
-        gmapObj.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
-        gmapObj.addControl(new maplibregl.ScaleControl(),'bottom-right');
-        gmapObj.on('load',()=>gmapObj.setTerrain({source:'aterr',exaggeration:1.6}));
-        deckOverlay=new deck.MapboxOverlay({interleaved:true,layers:[]});
-        gmapObj.addControl(deckOverlay);
-    },600);
-
-    /* ── Renderiza as linhas e pontos de ambos os pilotos ── */
-    function renderizarVoos(){
-        if(!gmapObj){alert('Mapa carregando, aguarde 2s.');return;}
-        const ano1=document.getElementById('sel-ano1').value,idx1=parseInt(document.getElementById('sel-piloto1').value);
-        const ano2=document.getElementById('sel-ano2').value,idx2=parseInt(document.getElementById('sel-piloto2').value);
-        const p1=DB[ano1]&&DB[ano1][idx1],p2=DB[ano2]&&DB[ano2][idx2];
-        if(!p1||!p2)return;
-        preencherStats('1',p1);preencherStats('2',p2);
-
-        const mkPath=p=>p.path.map(pt=>[pt[0],pt[1],pt[2]]);
-        const pontos=[];
-        const mkPts=(p,cor)=>p.path.forEach(pt=>pontos.push({
-            pos:[pt[0],pt[1],pt[2]],color:cor,
-            piloto:p.piloto,pais:p.pais,glider:p.glider,
-            hora:pt[3],vel:pt[4],desc:pt[5]
-        }));
-        mkPts(p1,[0,210,100,230]);
-        mkPts(p2,[255,184,28,230]);
-
-        /* PathLayer: linhas com geometria real (curvas por pontos GPS distintos) */
-        const linesLayer=new deck.PathLayer({
-            id:'linhas-voo',
-            data:[{path:mkPath(p1),color:[0,200,90]},{path:mkPath(p2),color:[255,184,28]}],
-            getPath:d=>d.path,getColor:d=>d.color,
-            getWidth:25,widthUnits:'meters',widthMinPixels:3
+            // Pico da Ibituruna — coordenadas GPS exatas
+            center: [-41.9437, -18.8819],
+            zoom: 12.5,
+            pitch: 55,
+            bearing: 30,
+            maxPitch: 89,
+            attributionControl: false
         });
 
-        /* ScatterplotLayer: pontos 3D com telemetria ao hover */
-        const dotsLayer=new deck.ScatterplotLayer({
-            id:'pontos-voo',data:pontos,
-            getPosition:d=>d.pos,getFillColor:d=>d.color,
-            getRadius:55,radiusUnits:'meters',pickable:true,
-            onHover:({object})=>{
-                const el=document.getElementById('sim-detalhes');
-                if(object){
-                    el.innerHTML=`<span class="tl">${object.piloto}</span> ${object.pais}<br>
-                        🕐 <strong>${object.hora}</strong> &nbsp;|&nbsp;
-                        🌡 Alt: <strong>${object.pos[2]}m</strong><br>
-                        ⚡ Vel: <strong>${object.vel} km/h</strong><br>
-                        📢 <em>${object.desc}</em><br>
-                        🛸 <small>${object.glider}</small>`;
-                }else{el.textContent='Passe o mouse sobre um ponto de voo.';}
-            }
+        // Controles de navegação (zoom, rotação, inclinação)
+        map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+        map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-right');
+        map.addControl(new maplibregl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true
+        }), 'top-right');
+
+        map.on('load', ()=>{
+            // Ativa terreno 3D
+            map.setTerrain({ source: 'terrain', exaggeration: 1.5 });
+            // Fontes e layers reservados para os voos (inicialmente vazios)
+            map.addSource('voo1', { type:'geojson', data: emptyGeoJSON() });
+            map.addSource('voo2', { type:'geojson', data: emptyGeoJSON() });
+
+            // Layer: linha de voo Piloto 1 (verde)
+            map.addLayer({
+                id: 'linha-p1',
+                type: 'line',
+                source: 'voo1',
+                layout: { 'line-cap':'round', 'line-join':'round' },
+                paint: {
+                    'line-color': '#00e676',
+                    'line-width': 4,
+                    'line-opacity': 0.92
+                }
+            });
+
+            // Layer: linha de voo Piloto 2 (ouro)
+            map.addLayer({
+                id: 'linha-p2',
+                type: 'line',
+                source: 'voo2',
+                layout: { 'line-cap':'round', 'line-join':'round' },
+                paint: {
+                    'line-color': '#FFB81C',
+                    'line-width': 4,
+                    'line-opacity': 0.92
+                }
+            });
         });
-
-        deckOverlay.setProps({layers:[linesLayer,dotsLayer]});
-        /* Câmera desliza panoramicamente pela rota completa */
-        gmapObj.flyTo({center:[-41.7800,-18.7600],zoom:10.5,pitch:72,bearing:-30,duration:4500});
     }
 
-    /* ── Preenchimento do painel de estatísticas ── */
-    function preencherStats(n,p){
-        document.getElementById('stats-p'+n).style.display='block';
-        document.getElementById('sp'+n+'-nome').textContent=p.piloto+' '+p.pais;
-        document.getElementById('sp'+n+'-pos').textContent=p.posicao;
-        document.getElementById('sp'+n+'-dist').textContent=p.distancia;
-        document.getElementById('sp'+n+'-alt').textContent=p.alt_max;
-        document.getElementById('sp'+n+'-dur').textContent=p.duracao;
-        document.getElementById('sp'+n+'-vel').textContent=p.vel_media;
-        document.getElementById('sp'+n+'-glider').textContent=p.glider;
-        document.getElementById('sp'+n+'-selete').textContent=p.selete;
-        document.getElementById('sp'+n+'-reserva').textContent=p.reserva;
-        document.getElementById('sp'+n+'-inst').textContent=p.instrumento;
+    function emptyGeoJSON() {
+        return { type:'FeatureCollection', features:[] };
     }
 
-    /* ── Controles de câmera 3D (pitch/bearing/zoom animados) ── */
-    function setCam(pitch,bearing,zoom){
-        if(!gmapObj)return;
-        gmapObj.easeTo({pitch,bearing,zoom,duration:1500});
+    /* ═══════════════════════════════════════════════
+       RENDERIZAR VOOS COMPARATIVOS
+    ═══════════════════════════════════════════════ */
+    function renderizarVoos() {
+        if(!map || !map.isStyleLoaded()) {
+            alert('Mapa ainda inicializando — aguarde 3 segundos e tente novamente.');
+            return;
+        }
+
+        const ano1 = document.getElementById('sel-ano1').value;
+        const idx1 = parseInt(document.getElementById('sel-piloto1').value);
+        const ano2 = document.getElementById('sel-ano2').value;
+        const idx2 = parseInt(document.getElementById('sel-piloto2').value);
+
+        const p1 = DB[ano1] && DB[ano1][idx1];
+        const p2 = DB[ano2] && DB[ano2][idx2];
+        if(!p1 || !p2) return;
+
+        preencherStats('1', p1);
+        preencherStats('2', p2);
+
+        // Limpar marcadores anteriores
+        markers.forEach(m => m.remove());
+        markers = [];
+
+        // Construir GeoJSON a partir dos pontos de cada piloto
+        const geo1 = pilotoParaGeoJSON(p1);
+        const geo2 = pilotoParaGeoJSON(p2);
+
+        map.getSource('voo1').setData(geo1);
+        map.getSource('voo2').setData(geo2);
+
+        // Adicionar marcadores clicáveis com telemetria
+        adicionarMarcadores(p1, '#00e676');
+        adicionarMarcadores(p2, '#FFB81C');
+
+        // Câmera: voa pela rota completa
+        map.flyTo({
+            center: [-41.8500, -18.8000],
+            zoom: 10.5,
+            pitch: 70,
+            bearing: -25,
+            duration: 4500,
+            essential: true
+        });
     }
 
-    /* ── Modo cinemático: rotação 360° contínua ao redor das rotas ── */
-    function modoCinematico(){
-        if(!gmapObj)return;
-        clearInterval(cinematicoInterval);
-        let b=gmapObj.getBearing();
-        gmapObj.easeTo({pitch:75,zoom:11.0,duration:1000});
-        cinematicoInterval=setInterval(()=>{b=(b+0.4)%360;gmapObj.setBearing(b);},50);
+    function pilotoParaGeoJSON(p) {
+        const coords = p.path.map(pt => [pt[0], pt[1]]);
+        return {
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: coords },
+                properties: { piloto: p.piloto }
+            }]
+        };
+    }
+
+    function adicionarMarcadores(p, cor) {
+        p.path.forEach((pt, i) => {
+            const [lng, lat, alt, hora, vel, desc] = pt;
+
+            // Emoji de marcador por tipo de ponto
+            const emoji = i === 0 ? '🚀' : (i === p.path.length-1 ? '🏁' : '📍');
+
+            // Elemento HTML do marcador
+            const el = document.createElement('div');
+            el.style.cssText = `
+                width:24px; height:24px; border-radius:50%;
+                background:${cor}; border:3px solid #fff;
+                cursor:pointer; display:flex; align-items:center;
+                justify-content:center; font-size:12px;
+                box-shadow:0 2px 8px rgba(0,0,0,.5);
+                transition:transform .2s;
+            `;
+            el.title = p.piloto + ' — ' + desc;
+
+            // Popup de telemetria completa
+            const popup = new maplibregl.Popup({ offset: 18, closeButton: false, maxWidth:'260px' })
+                .setHTML(`
+                    <div style="font-family:'Inter',sans-serif">
+                        <strong style="color:${cor};font-size:1.05em">${p.piloto}</strong>
+                        <span style="color:#aaa;font-size:.85em"> ${p.pais}</span><br>
+                        <hr style="border-color:#2a4030;margin:5px 0">
+                        🕐 <strong>${hora}</strong> &nbsp;|&nbsp;
+                        🌡 <strong>${alt}m</strong> &nbsp;|&nbsp;
+                        ⚡ <strong>${vel} km/h</strong><br>
+                        <em style="color:#9ecfb5">${desc}</em><br>
+                        <small style="color:#777">🛸 ${p.glider}</small>
+                    </div>
+                `);
+
+            const marker = new maplibregl.Marker({ element: el, anchor:'center' })
+                .setLngLat([lng, lat])
+                .setPopup(popup)
+                .addTo(map);
+
+            el.addEventListener('mouseenter', ()=>{ el.style.transform='scale(1.4)'; });
+            el.addEventListener('mouseleave', ()=>{ el.style.transform='scale(1)'; });
+            el.addEventListener('click', ()=>{
+                document.getElementById('tele-box').innerHTML = `
+                    <span class="tl">${p.piloto}</span> ${p.pais}<br>
+                    🕐 <strong>${hora}</strong> &nbsp;|&nbsp; 🌡 Alt: <strong>${alt}m</strong><br>
+                    ⚡ Vel: <strong>${vel} km/h</strong><br>
+                    📢 <em>${desc}</em><br>
+                    🛸 <small>${p.glider} · ${p.selete}</small>
+                `;
+            });
+
+            markers.push(marker);
+        });
+    }
+
+    /* ── Painel de Estatísticas ── */
+    function preencherStats(n, p) {
+        document.getElementById('stats-p'+n).style.display = 'block';
+        const map_fields = {
+            'nome':p.piloto+' '+p.pais,'pos':p.posicao,'dist':p.distancia,
+            'alt':p.alt_max,'dur':p.duracao,'vel':p.vel_media,
+            'glider':p.glider,'selete':p.selete,'reserva':p.reserva,'inst':p.instrumento
+        };
+        Object.entries(map_fields).forEach(([k,v])=>{
+            const el = document.getElementById('sp'+n+'-'+k);
+            if(el) el.textContent = v;
+        });
+    }
+
+    /* ── Controles de Câmera ── */
+    function setCam(pitch, bearing, zoom) {
+        if(!map) return;
+        map.easeTo({ pitch, bearing, zoom, duration: 1500 });
+    }
+
+    function modoCinematico() {
+        if(!map) return;
+        clearInterval(cinematicoIv);
+        let b = map.getBearing();
+        map.easeTo({ pitch: 72, zoom: 11.0, duration: 1200 });
+        cinematicoIv = setInterval(()=>{ b=(b+0.35)%360; map.setBearing(b); }, 50);
     }
     </script>
     <?php
