@@ -1,0 +1,90 @@
+/*
+Theme Name: Governador Valadares Voo Livre
+Theme URI: https://goval-voolivre.com
+Author: Ikaro Roger
+Description: Tema oficial da plataforma mundial de voo livre baseada em Goval. Design inspirado no visual da Vale (cores verde corporativo, dourado e branco).
+Version: 1.0.0
+Text Domain: goval-theme
+*/
+
+:root {
+  --vale-green: #007A53;
+  --vale-gold: #FFB81C;
+  --vale-dark: #123321;
+  --vale-light: #F4F6F4;
+  --font-main: 'Inter', sans-serif;
+  --font-heading: 'Roboto', sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--vale-light);
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  color: var(--vale-dark);
+}
+
+.header-site {
+  background-color: var(--vale-green);
+  color: white;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-site a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.nav-site ul {
+  list-style: none;
+  display: flex;
+  gap: 30px;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-site ul li {
+  margin: 0;
+  padding: 0;
+}
+
+.nav-site ul li a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1em;
+  transition: color 0.3s ease;
+}
+
+.nav-site ul li a:hover,
+.nav-site ul li.current-menu-item a {
+  color: var(--vale-gold);
+}
+
+.main-content {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-site {
+  background-color: var(--vale-dark);
+  color: white;
+  text-align: center;
+  padding: 20px;
+  margin-top: 40px;
+}
