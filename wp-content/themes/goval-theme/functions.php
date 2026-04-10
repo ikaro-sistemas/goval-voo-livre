@@ -16,3 +16,6 @@ add_action('wp_enqueue_scripts', 'goval_enqueue_scripts');
 
 // Carregar Tipos de Posts Customizados
 require_once get_template_directory() . '/cpt.php';
+
+// Módulos e Shortcodes para Compatibilidade Extrema com Elementor
+require_once get_template_directory() . '/shortcodes.php';
