@@ -19,3 +19,6 @@ require_once get_template_directory() . '/cpt.php';
 
 // Módulos e Shortcodes para Compatibilidade Extrema com Elementor
 require_once get_template_directory() . '/shortcodes.php';
+
+// Mapa 3D Avançado: Módulo separado com seleção Piloto+Ano e telemetria completa
+require_once get_template_directory() . '/map3d-shortcode.php';
