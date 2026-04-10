@@ -146,17 +146,20 @@ function goval_champions_tabs_shortcode($atts) {
             if ($tipo == 'GV' && !$atual_gv) $atual_gv = $c;
         }
 
-        // Soma os Troféus/Títulos (Somente os que ganharam Ouro / 1º Lugar)
+        // Soma os Troféus/Títulos e Arquiva os Anos (Somente Ouros / 1º Lugar)
         if ($pos == 1) {
             if ($tipo == 'Mundial') {
-                if (!isset($tit_mundiais[$nome])) $tit_mundiais[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0];
+                if (!isset($tit_mundiais[$nome])) $tit_mundiais[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0, 'anos' => []];
                 $tit_mundiais[$nome]['qtd']++;
+                $tit_mundiais[$nome]['anos'][] = $ano;
             } elseif ($tipo == 'GV') {
-                if (!isset($tit_gv[$nome])) $tit_gv[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0];
+                if (!isset($tit_gv[$nome])) $tit_gv[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0, 'anos' => []];
                 $tit_gv[$nome]['qtd']++;
+                $tit_gv[$nome]['anos'][] = $ano;
             } elseif ($tipo == 'Brasileiro') {
-                if (!isset($tit_br[$nome])) $tit_br[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0];
+                if (!isset($tit_br[$nome])) $tit_br[$nome] = ['nacao' => $c['nacionalidade'], 'qtd' => 0, 'anos' => []];
                 $tit_br[$nome]['qtd']++;
+                $tit_br[$nome]['anos'][] = $ano;
             }
         }
 
@@ -230,11 +233,14 @@ function goval_champions_tabs_shortcode($atts) {
                 <div class="goval-board">
                     <h3>🌍 Ranking de Mundiais</h3>
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px;">Ouros</th></tr>
-                        <?php foreach($tit_mundiais as $nome => $d): ?>
+                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px; width:50%;">Ouros e Anos</th></tr>
+                        <?php foreach($tit_mundiais as $nome => $d): rsort($d['anos']); ?>
                         <tr style="border-bottom: 1px solid #eee;">
                             <td style="padding:10px;"><strong><?php echo esc_html($nome); ?></strong><br><small><?php echo esc_html($d['nacao']); ?></small></td>
-                            <td style="padding:10px; color:#007A53; font-weight:bold; font-size:1.2em;"><?php echo $d['qtd']; ?>x</td>
+                            <td style="padding:10px; color:#007A53; font-weight:bold; font-size:1.1em;">
+                                <?php echo $d['qtd']; ?> Troféus<br>
+                                <span style="font-size:0.7em; color:#666; font-weight:normal; letter-spacing:-0.5px;">[<?php echo implode(', ', $d['anos']); ?>]</span>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </table>
@@ -243,24 +249,30 @@ function goval_champions_tabs_shortcode($atts) {
                 <div class="goval-board">
                     <h3>⛰️ Titulares de Governador Valadares</h3>
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px;">Ouros</th></tr>
-                        <?php foreach($tit_gv as $nome => $d): ?>
+                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px; width:50%;">Ouros e Anos</th></tr>
+                        <?php foreach($tit_gv as $nome => $d): rsort($d['anos']); ?>
                         <tr style="border-bottom: 1px solid #eee;">
                             <td style="padding:10px;"><strong><?php echo esc_html($nome); ?></strong><br><small><?php echo esc_html($d['nacao']); ?></small></td>
-                            <td style="padding:10px; color:#FFB81C; font-weight:bold; font-size:1.2em;"><?php echo $d['qtd']; ?>x</td>
+                            <td style="padding:10px; color:#FFB81C; font-weight:bold; font-size:1.1em;">
+                                <?php echo $d['qtd']; ?> Troféus<br>
+                                <span style="font-size:0.7em; color:#666; font-weight:normal; letter-spacing:-0.5px;">[<?php echo implode(', ', $d['anos']); ?>]</span>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </table>
                 </div>
-                <!-- Quadro Brasíleiros -->
+                <!-- Quadro Brasileiros -->
                 <div class="goval-board">
                     <h3>🇧🇷 Ranking Brasileiro Absoluto</h3>
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px;">Ouros</th></tr>
-                        <?php foreach($tit_br as $nome => $d): ?>
+                        <tr style="background:#f1f1f1;"><th style="padding:10px;">Atleta</th><th style="padding:10px; width:50%;">Ouros e Anos</th></tr>
+                        <?php foreach($tit_br as $nome => $d): rsort($d['anos']); ?>
                         <tr style="border-bottom: 1px solid #eee;">
                             <td style="padding:10px;"><strong><?php echo esc_html($nome); ?></strong><br><small><?php echo esc_html($d['nacao']); ?></small></td>
-                            <td style="padding:10px; color:#333; font-weight:bold; font-size:1.2em;"><?php echo $d['qtd']; ?>x</td>
+                            <td style="padding:10px; color:#333; font-weight:bold; font-size:1.1em;">
+                                <?php echo $d['qtd']; ?> Troféus<br>
+                                <span style="font-size:0.7em; color:#666; font-weight:normal; letter-spacing:-0.5px;">[<?php echo implode(', ', $d['anos']); ?>]</span>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </table>
