@@ -22,19 +22,26 @@ function goval_news_grid_shortcode($atts) {
     ob_start(); // Inicia o buffer de saída para evitar quebra de layout
     ?>
     <style>
-        /* Estilos limpos para o Grid de Notícias */
-        .goval-news-wrapper { max-width: 1300px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 2fr 1fr; gap: 40px; font-family: 'Inter', sans-serif; }
-        .goval-main-card { position: relative; overflow: hidden; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-        .goval-main-bg { height: 550px; width: 100%; transition: transform 0.5s ease; background-position: center; background-size: cover; }
-        .goval-main-card:hover .goval-main-bg { transform: scale(1.03); }
-        .goval-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px; background: linear-gradient(transparent, rgba(0,0,0,0.95)); color: white; }
-        .goval-badge { background: #e90000; color: white; padding: 6px 12px; font-weight: bold; border-radius: 4px; font-size: 0.9em; text-transform: uppercase; }
-        .goval-subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
-        
-        /* Responsividade Básica */
+        /* Estilos Premium para o Portal de Notícias */
+        .goval-news-wrapper { max-width: 1300px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 2.2fr 1fr; gap: 50px; font-family: 'Inter', sans-serif; }
+        .goval-main-card { position: relative; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: box-shadow 0.4s ease; cursor: pointer; }
+        .goval-main-card:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.35); }
+        .goval-main-bg { height: 580px; width: 100%; transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); background-position: center; background-size: cover; }
+        .goval-main-card:hover .goval-main-bg { transform: scale(1.06); }
+        .goval-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 40px 30px 40px; background: linear-gradient(transparent, rgba(0,0,0,0.95)); color: white; transition: padding-bottom 0.4s ease; }
+        .goval-main-card:hover .goval-overlay { padding-bottom: 50px; }
+        .goval-badge { background: #FFB81C; color: #222; padding: 8px 16px; font-weight: 800; border-radius: 4px; font-size: 0.85em; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: inline-block; }
+        .goval-subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 30px; }
+        .goval-card-anim { border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.06); background: white; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; cursor: pointer; border: 1px solid #f1f1f1; }
+        .goval-card-anim:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.12); }
+        .goval-card-anim img, .goval-card-anim div.bg { transition: transform 0.6s ease; }
+        .goval-card-anim:hover div.bg { transform: scale(1.08); }
+        .goval-side-item { display: flex; gap: 20px; border-bottom: 1px solid #eee; padding: 15px 10px; transition: all 0.3s ease; border-radius: 8px; cursor: pointer; }
+        .goval-side-item:hover { background: #fdfdfd; transform: translateX(8px); box-shadow: -4px 4px 15px rgba(0,0,0,0.05); border-left: 4px solid #007A53; padding-left: 15px; }
+
         @media (max-width: 900px) {
             .goval-news-wrapper { grid-template-columns: 1fr; }
-            .goval-main-bg { height: 350px; }
+            .goval-main-bg { height: 400px; }
             .goval-subgrid { grid-template-columns: 1fr; }
         }
     </style>
@@ -48,14 +55,14 @@ function goval_news_grid_shortcode($atts) {
             if ($destaque->have_posts()) : while ($destaque->have_posts()) : $destaque->the_post();
                 $capa = get_post_meta(get_the_ID(), 'foto_capa', true) ?: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Pico_da_Ibituruna.jpg';
             ?>
-            <div class="goval-main-card">
+            <div class="goval-main-card" onclick="window.location.href='<?php the_permalink(); ?>'">
                 <div class="goval-main-bg" style="background-image: url('<?php echo esc_url($capa); ?>');"></div>
                 <div class="goval-overlay">
                     <span class="goval-badge">Destaque Oficial</span>
                     <h1 style="margin: 20px 0 10px 0; font-size: 3.2em; line-height: 1.1; text-shadow: 2px 2px 5px rgba(0,0,0,0.9);">
-                        <a href="<?php the_permalink(); ?>" style="color: white; text-decoration: none;"><?php the_title(); ?></a>
+                        <?php the_title(); ?>
                     </h1>
-                    <p style="font-size: 1.25em; opacity: 0.95; margin: 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);"><?php echo wp_trim_words(get_the_excerpt(), 20); ?></p>
+                    <p style="font-size: 1.25em; opacity: 0.95; margin: 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);"><?php echo wp_trim_words(get_the_excerpt(), 25); ?></p>
                 </div>
             </div>
             <?php endwhile; endif; wp_reset_postdata(); ?>
@@ -68,10 +75,11 @@ function goval_news_grid_shortcode($atts) {
                 if ($sub->have_posts()) : while ($sub->have_posts()) : $sub->the_post();
                     $capa = get_post_meta(get_the_ID(), 'foto_capa', true) ?: 'https://images.unsplash.com/photo-1549646549-3837ad06a090?w=600&q=80';
                 ?>
-                <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); background: white;">
-                    <div style="background: url('<?php echo esc_url($capa); ?>') center/cover; height: 200px; width: 100%;"></div>
-                    <div style="padding: 15px;">
-                        <h3 style="margin: 0; font-size: 1.2em; line-height: 1.3;"><a href="<?php the_permalink(); ?>" style="color: #222; text-decoration: none;"><?php the_title(); ?></a></h3>
+                <div class="goval-card-anim" onclick="window.location.href='<?php the_permalink(); ?>'">
+                    <div style="overflow:hidden;"><div class="bg" style="background: url('<?php echo esc_url($capa); ?>') center/cover; height: 180px; width: 100%;"></div></div>
+                    <div style="padding: 20px;">
+                        <h3 style="margin: 0; font-size: 1.2em; line-height: 1.35; color: #222;"><?php the_title(); ?></h3>
+                        <p style="color:#666; font-size:0.95em; margin-top:10px;"><?php echo wp_trim_words(get_the_excerpt(), 14); ?></p>
                     </div>
                 </div>
                 <?php endwhile; endif; wp_reset_postdata(); ?>
@@ -88,11 +96,11 @@ function goval_news_grid_shortcode($atts) {
                 $capa = get_post_meta(get_the_ID(), 'foto_capa', true) ?: 'https://images.unsplash.com/photo-1518331165337-25e227568541?w=400&q=80';
                 $cat = get_post_meta(get_the_ID(), 'categoria_fake', true) ?: 'Aeronáutica';
             ?>
-            <div style="display: flex; gap: 20px; border-bottom: 1px solid #ddd; padding-bottom: 20px;">
-                <div style="background: url('<?php echo esc_url($capa); ?>') center/cover; min-width: 120px; height: 90px; border-radius: 6px;"></div>
+            <div class="goval-side-item" onclick="window.location.href='<?php the_permalink(); ?>'">
+                <div style="overflow:hidden; border-radius:6px; min-width: 120px; height: 90px;"><div style="background: url('<?php echo esc_url($capa); ?>') center/cover; width: 100%; height: 100%; transition: transform 0.4s ease;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"></div></div>
                 <div>
-                    <span style="color: #e90000; font-weight: bold; font-size: 0.85em; text-transform: uppercase;"><?php echo esc_html($cat); ?></span>
-                    <h3 style="margin: 8px 0; font-size: 1.1em; line-height: 1.3;"><a href="<?php the_permalink(); ?>" style="color: #333; text-decoration: none;"><?php the_title(); ?></a></h3>
+                    <span style="color: #007A53; font-weight: 800; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo esc_html($cat); ?></span>
+                    <h3 style="margin: 8px 0; font-size: 1.05em; line-height: 1.35; color: #222;"><?php the_title(); ?></h3>
                 </div>
             </div>
             <?php endwhile; endif; wp_reset_postdata(); ?>
