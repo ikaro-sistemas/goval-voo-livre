@@ -131,7 +131,11 @@ function goval_champions_tabs_shortcode($atts) {
                 'equipamento' => get_post_meta(get_the_ID(), 'equipamento', true) ?: 'N/A',
                 'ano' => get_post_meta(get_the_ID(), 'ano_campeonato', true) ?: date('Y'),
                 'pos' => (int) (get_post_meta(get_the_ID(), 'posicao', true) ?: 1),
-                'type' => get_post_meta(get_the_ID(), 'tipo_torneio', true) ?: 'Mundial'
+                'type' => get_post_meta(get_the_ID(), 'tipo_torneio', true) ?: 'Mundial',
+                'etapas' => get_post_meta(get_the_ID(), 'detalhes_etapas', true),
+                'conquistas' => get_post_meta(get_the_ID(), 'detalhes_conquistas', true),
+                'voo_log' => get_post_meta(get_the_ID(), 'detalhes_voo_log', true),
+                'equip_completo' => get_post_meta(get_the_ID(), 'equipamento_completo', true)
             ];
         }
     }
@@ -218,17 +222,68 @@ function goval_champions_tabs_shortcode($atts) {
                 <div style="background: white; border-top: 5px solid #007A53; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                     <span style="background: #e90000; color: white; padding: 5px 10px; font-weight: bold; border-radius: 4px;">CAMPEÃO MUNDIAL</span>
                     <h1 style="margin: 15px 0; color: #222; font-size: 2.5em;"><?php echo esc_html($atual_mundial['title']); ?></h1>
-                    <p style="font-size: 1.1em; color: #555;"><strong>Nação:</strong> <?php echo esc_html($atual_mundial['nacionalidade']); ?> <br/><strong>Vela (Glider):</strong> <?php echo esc_html($atual_mundial['equipamento']); ?></p>
-                    <p style="color: #444; font-style: italic; line-height: 1.5;"><?php echo wp_kses_post($atual_mundial['bio']); ?></p>
+                    <p style="font-size: 1.1em; color: #555;"><strong>Nação:</strong> <?php echo esc_html($atual_mundial['nacionalidade']); ?></p>
+                    
+                    <?php if ($atual_mundial['etapas']): ?>
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #007A53;">
+                        <h4 style="margin-top: 0; color: #007A53;">📊 Resultados por Etapa</h4>
+                        <div style="font-size: 0.9em; line-height: 1.4;"><?php echo nl2br(esc_html($atual_mundial['etapas'])); ?></div>
+                    </div>
+                    <?php endif; ?>
+
+                    <div style="margin: 15px 0;">
+                        <h4 style="margin-bottom: 5px; color: #333;">🛠️ Equipamento Completo</h4>
+                        <p style="font-size: 0.9em; color: #666; margin: 0;"><?php echo esc_html($atual_mundial['equip_completo'] ?: $atual_mundial['equipamento']); ?></p>
+                    </div>
+
+                    <p style="color: #444; font-style: italic; line-height: 1.5; border-top: 1px solid #eee; padding-top: 15px;"><?php echo wp_kses_post($atual_mundial['bio']); ?></p>
                 </div>
                 <?php endif; ?>
+
                 <!-- Circuito GV 2026 -->
                 <?php if ($atual_gv): ?>
                 <div style="background: white; border-top: 5px solid #FFB81C; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                     <span style="background: #333; color: white; padding: 5px 10px; font-weight: bold; border-radius: 4px;">REI DA IBITURUNA (CIRCUITO GV)</span>
                     <h1 style="margin: 15px 0; color: #222; font-size: 2.5em;"><?php echo esc_html($atual_gv['title']); ?></h1>
-                    <p style="font-size: 1.1em; color: #555;"><strong>Nação:</strong> <?php echo esc_html($atual_gv['nacionalidade']); ?> <br/><strong>Vela (Glider):</strong> <?php echo esc_html($atual_gv['equipamento']); ?></p>
-                    <p style="color: #444; font-style: italic; line-height: 1.5;"><?php echo wp_kses_post($atual_gv['bio']); ?></p>
+                    
+                    <?php if ($atual_gv['voo_log']): ?>
+                    <div style="background: #fff8e5; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #FFB81C;">
+                        <h4 style="margin-top: 0; color: #856404;">⏱️ Telemetria do Voo Final</h4>
+                        <div style="font-size: 0.9em; line-height: 1.4;"><?php echo nl2br(esc_html($atual_gv['voo_log'])); ?></div>
+                    </div>
+                    <?php endif; ?>
+
+                    <div style="margin: 15px 0;">
+                        <h4 style="margin-bottom: 5px; color: #333;">🛠️ Kit Profissional</h4>
+                        <p style="font-size: 0.9em; color: #666; margin: 0;"><?php echo esc_html($atual_gv['equip_completo'] ?: $atual_gv['equipamento']); ?></p>
+                    </div>
+
+                    <p style="color: #444; font-style: italic; line-height: 1.5; border-top: 1px solid #eee; padding-top: 15px;"><?php echo wp_kses_post($atual_gv['bio']); ?></p>
+                </div>
+                <?php endif; ?>
+
+                <!-- Brasileiro (Só se houver espaço ou em nova linha) -->
+                <?php
+                // Busca o atual brasileiro separadamente para destaque
+                $atual_br = null;
+                foreach($campeoes as $c) if($c['ano'] == '2026' && $c['pos'] == 1 && $c['type'] == 'Brasileiro') $atual_br = $c;
+                if ($atual_br):
+                ?>
+                <div style="background: white; border-top: 5px solid #222; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); grid-column: span 2;">
+                    <span style="background: #007A53; color: white; padding: 5px 10px; font-weight: bold; border-radius: 4px;">CAMPEÃO BRASILEIRO</span>
+                    <div style="display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; margin-top: 15px;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <h2 style="margin: 0; color: #222; font-size: 2.2em;"><?php echo esc_html($atual_br['title']); ?></h2>
+                            <p style="color: #666; margin-top: 10px;"><?php echo wp_kses_post($atual_br['bio']); ?></p>
+                        </div>
+                        <?php if ($atual_br['conquistas']): ?>
+                        <div style="flex: 1; min-width: 300px; background: #f0f0f0; padding: 20px; border-radius: 8px;">
+                            <h4 style="margin-top: 0; color: #222;">🏅 Recordes e Pontuação</h4>
+                            <div style="font-size: 0.95em; color: #333; line-height: 1.5;"><?php echo nl2br(esc_html($atual_br['conquistas'])); ?></div>
+                            <div style="margin-top: 15px; font-size: 0.85em; color: #666;"><strong>Gear:</strong> <?php echo esc_html($atual_br['equip_completo']); ?></div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php endif; ?>
             </div>
