@@ -232,7 +232,7 @@ function goval_3d_map_shortcode($atts) {
     }
 
     // ══════════════════════════════════════════════════════════
-    // MOTOR 3D: MAPLIBRE GL (OFFLINE)
+    // MOTOR 3D: MAPLIBRE GL (OFFLINE + ELEVAÇÃO REAL)
     // ══════════════════════════════════════════════════════════
     function initMap() {
         const style = {
@@ -240,15 +240,26 @@ function goval_3d_map_shortcode($atts) {
             sources: {
                 'tiles-local': {
                     type: 'raster',
-                    tiles: ['<?= $tile_url ?>'],
+                    tiles: ['<?= get_template_directory_uri() . "/tile-proxy.php?type=sat&z={z}&x={x}&y={y}" ?>'],
                     tileSize: 256,
                     attribution: '© Google Satellite (Offline Cache)'
+                },
+                'terrain-tiles': {
+                    type: 'raster-dem',
+                    tiles: ['<?= get_template_directory_uri() . "/tile-proxy.php?type=terrain&z={z}&x={x}&y={y}" ?>'],
+                    tileSize: 256,
+                    encoding: 'terrarium' // Formato AWS Terrarium (cacheado localmente)
                 }
             },
             layers: [
                 { id: 'background', type: 'background', paint: { 'background-color': '#05100a' } },
                 { id: 'sat-layer', type: 'raster', source: 'tiles-local' }
-            ]
+            ],
+            sky: {
+                'sky-type': 'atmosphere',
+                'sky-atmosphere-sun': [0.0, 0.0],
+                'sky-atmosphere-sun-intensity': 15
+            }
         };
 
         map = new maplibregl.Map({
@@ -256,17 +267,27 @@ function goval_3d_map_shortcode($atts) {
             style: style,
             center: [-41.9437, -18.8819],
             zoom: 13,
-            pitch: 45,
+            pitch: 65,
             bearing: -20,
-            antialias: true
+            antialias: true,
+            maxPitch: 85
         });
 
-        // Controles de Navegação (Zoom/Rotation)
         map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }));
         map.addControl(new maplibregl.FullscreenControl());
 
         map.on('load', () => {
-            console.log("MapLibre 3D Inicializado com sucesso.");
+            // Ativa o Terreno 3D Real (Malha de elevação)
+            map.setTerrain({ source: 'terrain-tiles', exaggeration: 1.5 });
+            
+            // Adiciona Neve/Névoa para profundidade 3D
+            map.setFog({
+              'range': [0.5, 10],
+              'color': '#1a3020',
+              'horizon-blend': 0.1
+            });
+
+            console.log("MapLibre 3D Terrain Inicializado.");
         });
     }
 
