@@ -1,0 +1,39 @@
+name: 🚀 Deploy para HostGator (Automático)
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  deploy:
+    name: 🎉 Publicar na Nuvem
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🚚 Baixando Código mais recente
+        uses: actions/checkout@v4
+      
+      - name: 📂 Enviando os arquivos para a HostGator (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # Excluímos arquivos de teste e configurações de não ir pro painel ao vivo
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .gitignore
+            docker-compose.yml
+            push.ps1
+            upload.sh
+            uploads.ini
+            README.md
+            wp-content/uploads/tile-cache/**
+            wp-content/themes/goval-theme/dev-scripts/**
+            openclaw_data/**
+            **/*.log
+          server-dir: ./public_html/ # Ajuste se o seu WordPress não estiver na raiz do seu site

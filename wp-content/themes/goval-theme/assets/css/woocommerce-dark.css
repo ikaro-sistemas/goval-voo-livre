@@ -1,0 +1,196 @@
+/* =========================================================
+   WooCommerce Dark & Neon Glassmorphism Theme Override
+   ========================================================= */
+
+/* Fundo Geral da Loja */
+.woocommerce {
+    background-color: #05100a !important; /* Mesma base da HUD do Mapa */
+    color: #e0e0e0;
+}
+
+/* Títulos Globais da Loja */
+.woocommerce h1, .woocommerce h2, .woocommerce h3, 
+.woocommerce h4, .woocommerce h5, .woocommerce h6 {
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+}
+
+/* Grids de Produtos (Listagem) */
+.woocommerce ul.products li.product {
+    background: rgba(10, 25, 15, 0.6); /* Glassmorphism Base */
+    border: 1px solid #1a3020;
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    text-align: center;
+}
+
+.woocommerce ul.products li.product:hover {
+    transform: translateY(-5px);
+    border-color: #00ff88;
+    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.15);
+}
+
+/* Título e Preço da Listagem */
+.woocommerce ul.products li.product .woocommerce-loop-product__title {
+    color: #ffffff;
+    font-size: 1.1em;
+    margin-top: 15px;
+}
+
+.woocommerce ul.products li.product .price {
+    color: #00ff88;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Botões Globais de Compra Neon */
+.woocommerce a.button, 
+.woocommerce button.button, 
+.woocommerce input.button, 
+.woocommerce #respond input#submit {
+    background: linear-gradient(135deg, #00d2ff 0%, #00ff88 100%) !important;
+    color: #000000 !important;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+.woocommerce a.button:hover, 
+.woocommerce button.button:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+    transform: scale(1.02);
+}
+
+/* =========================================================
+   Página do Produto Único (Single Product)
+   ========================================================= */
+.woocommerce div.product {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-top: 40px;
+    padding: 30px;
+    background: rgba(10, 25, 15, 0.8);
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.woocommerce div.product div.images {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #1a3020;
+}
+
+.woocommerce div.product p.price {
+    color: #00ff88;
+    font-size: 2em;
+    font-weight: 800;
+}
+
+.woocommerce div.product .woocommerce-tabs {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #1a3020;
+}
+
+.woocommerce div.product .woocommerce-tabs ul.tabs li {
+    background: transparent;
+    border: 1px solid #1a3020;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+}
+
+.woocommerce div.product .woocommerce-tabs ul.tabs li.active {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: #00ff88;
+    color: #00ff88;
+}
+
+/* =========================================================
+   Dinâmica de Checkout Foco Total (Estilo Modal Embutido)
+   ========================================================= */
+/* Quando estamos no Checkout, obscurecemos o topo e rodapé p/ dar sensação de APP/Popup */
+.goval-dynamic-checkout header,
+.goval-dynamic-checkout footer {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.goval-dynamic-checkout .woocommerce {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #08110b;
+    padding: 40px;
+    border-radius: 16px;
+    border: 1px solid #00ff88;
+    box-shadow: 0 0 50px rgba(0, 255, 136, 0.1);
+    animation: fadeInUp 0.5s ease;
+}
+
+/* Formulários Woo */
+.woocommerce form .form-row input.input-text, 
+.woocommerce form .form-row textarea {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #1a3020;
+    color: #fff;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.woocommerce form .form-row input.input-text:focus, 
+.woocommerce form .form-row textarea:focus {
+    border-color: #00ff88;
+    outline: none;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+}
+
+.woocommerce-checkout #payment {
+    background: rgba(10, 25, 15, 0.8) !important;
+    border-radius: 12px;
+}
+
+.woocommerce-checkout #payment ul.payment_methods {
+    border-bottom: 1px solid #1a3020 !important;
+}
+
+.woocommerce-checkout #payment div.payment_box {
+    background: rgba(0, 0, 0, 0.6) !important;
+    color: #aaa !important;
+}
+
+.woocommerce-checkout #payment div.payment_box::before {
+    border-bottom-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Tabela de Revisão do Pedido */
+.woocommerce table.shop_table {
+    border-color: #1a3020;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.woocommerce table.shop_table th {
+    background: rgba(10, 25, 15, 0.9);
+    color: #fff;
+}
+
+.woocommerce table.shop_table td {
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid #1a3020;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}

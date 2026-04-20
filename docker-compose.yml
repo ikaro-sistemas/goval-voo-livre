@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: goval-voo-livre-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: somewordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - db_data:/var/lib/mysql
+    command: '--default-authentication-plugin=mysql_native_password'
+
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:latest
+    container_name: openclaw-agent
+    restart: unless-stopped
+    ports:
+      - "18789:18789"
+    volumes:
+      - ./openclaw_data:/home/node/.openclaw
+    environment:
+      - PORT=18789
+      - OPENAI_API_BASE=https://api.deepseek.com
+      - OPENAI_API_KEY=sk-5c56ce265ae741d5b0812767ea0e108d
+      - AGENT_MODEL=deepseek-chat
+
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    container_name: goval-voo-livre-wp
+    restart: always
+    ports:
+      - "8085:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: 1
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+
+volumes:
+  db_data:

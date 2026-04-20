@@ -1,0 +1,16 @@
+/* Estilos Limpos da Ferramenta de Campeões */
+.goval-champions-wrapper { max-width: 1300px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif;}
+.goval-tabs-nav { display: flex; gap: 10px; border-bottom: 2px solid #007A53; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; }
+.goval-tab-btn { padding: 12px 24px; border:none; background: #eee; color: #333; cursor: pointer; font-weight: bold; border-radius: 4px; white-space: nowrap; transition: 0.2s;}
+.goval-tab-btn.active { background: #007A53; color: white; }
+.goval-tab-btn:hover:not(.active) { background: #ddd; }
+.goval-tab-content { display: none; animation: fadeIn 0.5s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.goval-ranking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 20px; }
+.goval-board { background: white; border-radius: 8px; border: 1px solid #ddd; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.goval-board h3 { margin: 0 0 15px 0; color: #007A53; border-bottom: 2px solid #007A53; padding-bottom: 10px; }
+.goval-card { border-left: 5px solid #FFB81C; background: #fafafa; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+.gold-border { border-left-color: #FFD700 !important; }
+.silver-border { border-left-color: #C0C0C0 !important; }
+.bronze-border { border-left-color: #CD7F32 !important; }

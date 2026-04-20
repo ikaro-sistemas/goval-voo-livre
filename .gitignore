@@ -1,0 +1,10 @@
+.env
+node_modules/
+vendor/
+.DS_Store
+Thumbs.db
+
+# Goval Specifics
+wp-content/uploads/tile-cache/
+openclaw_data/
+*.log

@@ -1,0 +1,22 @@
+/* Estilos Premium para o Portal de Notícias */
+.goval-news-wrapper { max-width: 1300px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 2.2fr 1fr; gap: 50px; font-family: 'Inter', sans-serif; }
+.goval-main-card { position: relative; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: box-shadow 0.4s ease; cursor: pointer; }
+.goval-main-card:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.35); }
+.goval-main-bg { height: 580px; width: 100%; transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); background-position: center; background-size: cover; }
+.goval-main-card:hover .goval-main-bg { transform: scale(1.06); }
+.goval-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 40px 30px 40px; background: linear-gradient(transparent, rgba(0,0,0,0.95)); color: white; transition: padding-bottom 0.4s ease; }
+.goval-main-card:hover .goval-overlay { padding-bottom: 50px; }
+.goval-badge { background: #FFB81C; color: #222; padding: 8px 16px; font-weight: 800; border-radius: 4px; font-size: 0.85em; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: inline-block; }
+.goval-subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 30px; }
+.goval-card-anim { border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.06); background: white; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; cursor: pointer; border: 1px solid #f1f1f1; }
+.goval-card-anim:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.12); }
+.goval-card-anim img, .goval-card-anim div.bg { transition: transform 0.6s ease; }
+.goval-card-anim:hover div.bg { transform: scale(1.08); }
+.goval-side-item { display: flex; gap: 20px; border-bottom: 1px solid #eee; padding: 15px 10px; transition: all 0.3s ease; border-radius: 8px; cursor: pointer; }
+.goval-side-item:hover { background: #fdfdfd; transform: translateX(8px); box-shadow: -4px 4px 15px rgba(0,0,0,0.05); border-left: 4px solid #007A53; padding-left: 15px; }
+
+@media (max-width: 900px) {
+    .goval-news-wrapper { grid-template-columns: 1fr; }
+    .goval-main-bg { height: 400px; }
+    .goval-subgrid { grid-template-columns: 1fr; }
+}
