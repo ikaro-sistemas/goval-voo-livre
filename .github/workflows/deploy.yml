@@ -36,4 +36,4 @@ jobs:
             wp-content/themes/goval-theme/dev-scripts/**
             openclaw_data/**
             **/*.log
-          server-dir: ./public_html/ # Ajuste se o seu WordPress não estiver na raiz do seu site
+          server-dir: ./public_html/voolivre/ # Ajustado para a subpasta do projeto
